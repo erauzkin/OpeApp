@@ -2,7 +2,7 @@ name: Deploy Blazor WASM to Synology
 
 on:
   push:
-    branches: [ "main" ] # Se ejecuta al pushear a main
+    branches: [ "main" ]
 
 jobs:
   deploy:
@@ -15,14 +15,10 @@ jobs:
     - name: Configurar .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '10.0.x' # Cambia a '9.0.x' si ya usas .NET 9
+        dotnet-version: '10.0.x'
 
     - name: Publicar aplicación Blazor
       run: dotnet publish -c Release -o release-output
-
-    # Opcional: Si necesitas parchear el base href dinámicamente, descomenta la siguiente línea:
-    # - name: Ajustar Base HREF
-    #   run: sed -i 's/<base href="\/" \/>/<base href="\/mi-app\/" \/>/g' release-output/wwwroot/index.html
 
     - name: Desplegar en Synology vía SFTP
       uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -31,10 +27,10 @@ jobs:
         port: ${{ secrets.NAS_PORT }}
         username: ${{ secrets.NAS_USERNAME }}
         password: ${{ secrets.NAS_PASSWORD }}
-        protocol: sftp
-        # Carpeta local que genera dotnet publish
+        protocol: ftps
         local-dir: ./release-output/wwwroot/
-        # Ruta absoluta en tu NAS (ajusta según tu volumen y carpeta)
         server-dir: /volume1/opeapp/
-        # Borra los archivos del NAS que ya no existan en la nueva compilación
         dangerous-clean-html: true
+        excludes: |
+          data/comun.json
+          data/especifica.json
