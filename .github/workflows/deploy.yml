@@ -27,7 +27,7 @@ jobs:
         TARGET_DIR="/app/output"
         
         # 1. Limpieza selectiva: Borramos todo EXCEPTO los dos archivos que quieres proteger
-        find "$TARGET_DIR" -mindepth 1 ! -name 'data/comun.json' ! -name 'data/especifica.json' -delete
+        find "$TARGET_DIR" -mindepth 1 ! -name '$TARGET_DIR/data/comun.json' ! -name '$TARGET_DIR/data/especifica.json' -delete
         
         # 2. Copiamos los nuevos archivos compilados de .NET 10 a la carpeta del NAS
         cp -r release-output/wwwroot/* "$TARGET_DIR/"
