@@ -31,3 +31,10 @@ jobs:
         
         # 2. Copiamos los nuevos archivos compilados de .NET 10 a la carpeta del NAS
         cp -r release-output/wwwroot/* "$TARGET_DIR/"
+        
+        # ─── AQUÍ CORREGIMOS EL ERROR 403 ───
+        # Concedemos permisos de ejecución/lectura a los directorios para que Apache pueda entrar
+        find "$TARGET_DIR" -type d -exec chmod 755 {} +
+        
+        # Concedemos permisos de lectura a todos los archivos para que sean accesibles web
+        find "$TARGET_DIR" -type f -exec chmod 644 {} +
