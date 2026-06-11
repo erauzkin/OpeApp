@@ -1,0 +1,27 @@
+# 1. ENRUTAMIENTO DE BLAZOR (Evita el 404 al recargar páginas)
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# 2. SEÑALIZACIÓN DE COMPRESIÓN BROTLI PARA .NET 10
+<IfModule mod_headers.c>
+  # Forzar que los archivos .js.br se sirvan como JavaScript y con codificación br
+  <FilesMatch "\.js\.br$">
+    ForceType application/javascript
+    Header set Content-Encoding br
+  </FilesMatch>
+
+  # Forzar que los archivos .wasm.br se sirvan como WebAssembly y con codificación br
+  <FilesMatch "\.wasm\.br$">
+    ForceType application/wasm
+    Header set Content-Encoding br
+  </FilesMatch>
+
+  # Evitar que Cloudflare o el navegador almacenen en caché una cabecera errónea
+  Header set Cache-Control "no-cache, no-store, must-revalidate"
+</IfModule>
