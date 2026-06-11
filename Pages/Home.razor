@@ -1,0 +1,150 @@
+@page "/"
+@inject NavigationManager Nav
+@inject FallosService FallosService
+@inject PreguntaService PreguntaService
+@inject IJSRuntime JS
+@using OpeApp.Models
+@using OpeApp.Services
+
+<PageTitle>Práctica Oposición</PageTitle>
+
+<div class="home-container">
+    <h1>OpeApp</h1>
+    <p class="subtitle">Selecciona cómo quieres practicar</p>
+
+    @if (_mostrarAvisoConexion)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <strong>⚠ Sin conexión</strong> — necesitas conexión a internet para empezar a practicar o hacer un simulacro.
+            <button type="button" class="btn-close" @onclick="() => _mostrarAvisoConexion = false" aria-label="Cerrar"></button>
+        </div>
+    }
+
+    @if (!_online)
+    {
+        <div class="badge-sin-conexion" title="Sin conexión a internet">
+            <span class="dot"></span> Sin conexión
+        </div>
+    }
+
+    <div class="home-grid">
+        <!-- Card 1: Práctica por parte -->
+        <div class="home-card">
+            <h2>Práctica por parte</h2>
+            <p class="card-subtitle">Elige una parte para practicar</p>
+
+            <div class="sub-bateria-grid">
+                <div class="sub-bateria-card" @onclick='() => IniciarBateria("especifica")'>
+                    <div class="bateria-icon">🎯</div>
+                    <h3>Parte Específica</h3>
+                </div>
+
+                <div class="sub-bateria-card" @onclick='() => IniciarBateria("comun")'>
+                    <div class="bateria-icon">📚</div>
+                    <h3>Parte Común</h3>
+                </div>
+            </div>
+
+            <div class="form-check form-switch switch-orden">
+                <input class="form-check-input" type="checkbox" role="switch" id="switchOrden" @bind="_mantenerOrden" />
+                <label class="form-check-label" for="switchOrden">Preguntas en orden (sin mezclar)</label>
+            </div>
+        </div>
+
+        <!-- Card 2: Simulacro Completo -->
+        <div class="home-card home-card-simulacro">
+            <h2>Simulacro Completo</h2>
+            <p class="card-subtitle">Mezcla preguntas de ambas partes</p>
+
+            <div class="simulacro-inputs">
+                <label>
+                    <span>Preguntas de parte específica</span>
+                    <input type="number" min="0" max="@_maxEspecifica" @bind="_numEspecifica" @bind:event="oninput" />
+                    <small>Máx. @_maxEspecifica</small>
+                </label>
+                <label>
+                    <span>Preguntas de parte común</span>
+                    <input type="number" min="0" max="@_maxComun" @bind="_numComun" @bind:event="oninput" />
+                    <small>Máx. @_maxComun</small>
+                </label>
+                
+            </div>
+            <div class="simulacro-total">
+                Total: <strong>@_numEspecifica + @_numComun = @(_numComun + _numEspecifica)</strong> preguntas
+            </div>
+
+            <button class="btn-accion btn-iniciar"
+                    disabled="@(_numComun + _numEspecifica == 0)"
+                    @onclick="IniciarSimulacro">
+                ▶ Iniciar simulacro
+            </button>
+        </div>
+
+        <!-- Card 3: Repaso de Fallos -->
+        <div class="home-card home-card-repaso" @onclick="IrARepaso">
+            <div class="repaso-card-content">
+                <div class="bateria-icon">🔁</div>
+                <h2>Repaso de Fallos</h2>
+                <p>@_textoRepaso</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _mantenerOrden;
+    private int _numComun = 10;
+    private int _numEspecifica = 90;
+    private int _maxComun;
+    private int _maxEspecifica;
+    private int _fallosCount;
+    private string _textoRepaso = "Cargando...";
+    private bool _online = true;
+    private bool _mostrarAvisoConexion;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var comun = await PreguntaService.ObtenerPorBateria(TipoBateria.Comun);
+        var especifica = await PreguntaService.ObtenerPorBateria(TipoBateria.Especifica);
+        _maxComun = comun.Count;
+        _maxEspecifica = especifica.Count;
+        _numComun = Math.Min(_numComun, _maxComun);
+        _numEspecifica = Math.Min(_numEspecifica, _maxEspecifica);
+
+        var fallos = await FallosService.ObtenerFallos();
+        _fallosCount = fallos.Count;
+        _textoRepaso = _fallosCount == 0
+            ? "Aún no tienes fallos guardados"
+            : $"{_fallosCount} pregunta{(_fallosCount == 1 ? "" : "s")} para repasar";
+
+        _online = await JS.InvokeAsync<bool>("isOnline");
+    }
+
+    async Task<bool> RequiereConexion()
+    {
+        _online = await JS.InvokeAsync<bool>("checkRealOnline");
+        if (!_online)
+        {
+            _mostrarAvisoConexion = true;
+        }
+        return _online;
+    }
+
+    async Task IniciarBateria(string bateria)
+    {
+        if (!await RequiereConexion()) return;
+        var orden = _mantenerOrden ? "true" : "false";
+        Nav.NavigateTo($"/practica/{bateria}?orden={orden}");
+    }
+
+    async Task IniciarSimulacro()
+    {
+        if (!await RequiereConexion()) return;
+        if (_numComun < 0) _numComun = 0;
+        if (_numEspecifica < 0) _numEspecifica = 0;
+        if (_numComun == 0 && _numEspecifica == 0) return;
+        Nav.NavigateTo($"/practica/todas?c={_numComun}&e={_numEspecifica}");
+    }
+
+    void IrARepaso() => Nav.NavigateTo("/repaso");
+}

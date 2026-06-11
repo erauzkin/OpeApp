@@ -1,0 +1,70 @@
+@page "/resultados/{aciertos:int}/{total:int}/{bateria}"
+@inject NavigationManager Nav
+
+<PageTitle>Resultados</PageTitle>
+
+<div class="resultados-container">
+    <h1>Resultados</h1>
+
+    <div class="puntuacion-circulo">
+        <div class="circulo @ClasePuntuacion">
+            <span class="numero">@Aciertos</span>
+            <span class="divisor">de</span>
+            <span class="total">@Total</span>
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stat">
+            <span class="stat-valor correcto">@Aciertos</span>
+            <span class="stat-label">Aciertos</span>
+        </div>
+        <div class="stat">
+            <span class="stat-valor incorrecto">@(Total - Aciertos)</span>
+            <span class="stat-label">Errores</span>
+        </div>
+        <div class="stat">
+            <span class="stat-valor">@Porcentaje%</span>
+            <span class="stat-label">Nota</span>
+        </div>
+    </div>
+
+    <p class="mensaje">@Mensaje</p>
+
+    <div class="acciones-resultados">
+        <button class="btn-accion btn-reintentar" @onclick="Reintentar">
+            🔁 Repetir batería
+        </button>
+        <button class="btn-accion btn-inicio" @onclick="Inicio">
+            🏠 Volver al inicio
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Aciertos { get; set; }
+    [Parameter] public int Total { get; set; }
+    [Parameter] public string Bateria { get; set; } = "comun";
+
+    int Porcentaje => Total > 0 ? (int)Math.Round(Aciertos * 100.0 / Total) : 0;
+
+    string ClasePuntuacion => Porcentaje switch
+    {
+        >= 80 => "excelente",
+        >= 60 => "bien",
+        >= 40 => "regular",
+        _ => "mejorar"
+    };
+
+    string Mensaje => Porcentaje switch
+    {
+        >= 90 => "¡Excelente! Estás muy bien preparado.",
+        >= 70 => "¡Muy bien! Sigue así.",
+        >= 50 => "Aprobado, pero hay margen de mejora.",
+        >= 40 => "Cerca del aprobado. ¡Repasa los fallos!",
+        _ => "Necesitas repasar más. ¡Tú puedes!"
+    };
+
+    void Reintentar() => Nav.NavigateTo($"/practica/{Bateria}");
+    void Inicio() => Nav.NavigateTo("/");
+}

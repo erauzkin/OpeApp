@@ -1,0 +1,196 @@
+@page "/repaso"
+@inject FallosService FallosService
+@inject NavigationManager Nav
+
+<PageTitle>Repaso de Fallos</PageTitle>
+
+<div class="repaso-container">
+    <div class="repaso-topbar">
+        <button class="btn-volver" @onclick="VolverAlInicio" title="Volver al inicio">← Inicio</button>
+        <h1>Repaso de Fallos</h1>
+    </div>
+
+    @if (_cargando)
+    {
+        <div class="loading">Cargando fallos guardados...</div>
+    }
+    else if (_fallos.Count == 0)
+    {
+        <div class="vacio">
+            <div class="vacio-icono">📭</div>
+            <h2>No tienes preguntas falladas guardadas</h2>
+            <p>Cuando falles una pregunta, se guardará automáticamente aquí para que puedas repasarla más tarde.</p>
+            <button class="btn-accion btn-inicio" @onclick="VolverAlInicio">🏠 Volver al inicio</button>
+        </div>
+    }
+    else if (_practicando)
+    {
+        <div class="progreso-bar">
+            <div class="progreso-fill" style="width: @((_indicePractica + 1) * 100 / _preguntasPractica.Count)%"></div>
+        </div>
+        <div class="progreso-texto">
+            Repaso @(_indicePractica + 1) de @_preguntasPractica.Count
+        </div>
+
+        var pregunta = _preguntasPractica[_indicePractica];
+        var respondida = _respuestaPractica.HasValue;
+        var esCorrecta = respondida && _respuestaPractica!.Value == pregunta.Correcta;
+
+        <div class="pregunta-card">
+            <p class="enunciado">@pregunta.Enunciado</p>
+
+            <div class="respuestas">
+                @for (int i = 0; i < pregunta.Respuestas.Count; i++)
+                {
+                    var idx = i;
+                    var clase = ObtenerClaseRepaso(idx, respondida, pregunta.Correcta);
+                    <button class="respuesta-btn @clase"
+                            disabled="@respondida"
+                            @onclick="() => ResponderRepaso(idx)">
+                        <span class="respuesta-letra">@((char)('A' + idx))</span>
+                        @pregunta.Respuestas[idx]
+                    </button>
+                }
+            </div>
+
+            @if (respondida)
+            {
+                <div class="feedback @(esCorrecta ? "feedback-correcto" : "feedback-incorrecto")">
+                    @if (esCorrecta)
+                    {
+                        <span>✓ ¡Correcto! Esta pregunta se eliminará de tus fallos.</span>
+                    }
+                    else
+                    {
+                        <span>✗ Incorrecto. La respuesta correcta era: <strong>@pregunta.Respuestas[pregunta.Correcta]</strong></span>
+                    }
+                </div>
+
+                <div class="acciones">
+                    @if (_indicePractica < _preguntasPractica.Count - 1)
+                    {
+                        <button class="btn-siguiente" @onclick="SiguienteRepaso">Siguiente →</button>
+                    }
+                    else
+                    {
+                        <button class="btn-siguiente" @onclick="FinalizarRepaso">Finalizar repaso</button>
+                    }
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="repaso-subtitulo">
+            Tienes <strong>@_fallos.Count</strong> pregunta@(_fallos.Count == 1 ? "" : "s") guardada@(_fallos.Count == 1 ? "" : "s") para repasar.
+        </p>
+
+        <div class="repaso-acciones-globales">
+            <button class="btn-accion btn-reintentar" @onclick="IniciarPractica">
+                ▶ Practicar todas (@_fallos.Count)
+            </button>
+            <button class="btn-accion btn-peligro" @onclick="LimpiarTodo">
+                🗑️ Borrar todos los fallos
+            </button>
+        </div>
+
+        <div class="fallos-lista">
+            @foreach (var f in _fallos.OrderByDescending(x => x.FallosCount).ThenByDescending(x => x.UltimaFecha))
+            {
+                <div class="fallo-item">
+                    <div class="fallo-info">
+                        <span class="bateria-badge">@f.Bateria.ToString().ToUpper()</span>
+                        <span class="fallo-contador" title="Veces fallada">✗ @f.FallosCount</span>
+                        <p class="fallo-enunciado">@f.Enunciado</p>
+                    </div>
+                    <button class="btn-eliminar" @onclick="() => EliminarFallo(f)" title="Eliminar de la lista">✕</button>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<PreguntaFallada> _fallos = [];
+    private bool _cargando = true;
+    private bool _practicando = false;
+    private List<PreguntaFallada> _preguntasPractica = [];
+    private int _indicePractica = 0;
+    private int? _respuestaPractica;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _fallos = await FallosService.ObtenerFallos();
+        _cargando = false;
+    }
+
+    void VolverAlInicio() => Nav.NavigateTo("/");
+
+    void IniciarPractica()
+    {
+        _preguntasPractica = _fallos.OrderBy(_ => Random.Shared.Next()).ToList();
+        _indicePractica = 0;
+        _respuestaPractica = null;
+        _practicando = true;
+    }
+
+    async Task ResponderRepaso(int idx)
+    {
+        if (_respuestaPractica.HasValue) return;
+        _respuestaPractica = idx;
+        var pregunta = _preguntasPractica[_indicePractica];
+        if (idx == pregunta.Correcta)
+        {
+            await FallosService.EliminarFallo(pregunta.Bateria, pregunta.Id);
+        }
+        else
+        {
+            await FallosService.AgregarFallo(ConvertirAPregunta(pregunta));
+        }
+    }
+
+    void SiguienteRepaso()
+    {
+        if (_indicePractica < _preguntasPractica.Count - 1)
+        {
+            _indicePractica++;
+            _respuestaPractica = null;
+        }
+    }
+
+    async Task FinalizarRepaso()
+    {
+        _practicando = false;
+        _respuestaPractica = null;
+        _fallos = await FallosService.ObtenerFallos();
+    }
+
+    async Task EliminarFallo(PreguntaFallada f)
+    {
+        await FallosService.EliminarFallo(f.Bateria, f.Id);
+        _fallos = await FallosService.ObtenerFallos();
+    }
+
+    async Task LimpiarTodo()
+    {
+        await FallosService.LimpiarFallos();
+        _fallos = [];
+    }
+
+    string ObtenerClaseRepaso(int idx, bool respondida, int correcta)
+    {
+        if (!respondida) return string.Empty;
+        if (idx == correcta) return "correcta";
+        if (idx == _respuestaPractica) return "incorrecta";
+        return "desactivada";
+    }
+
+    static Pregunta ConvertirAPregunta(PreguntaFallada f) => new()
+    {
+        Id = f.Id,
+        Bateria = f.Bateria,
+        Enunciado = f.Enunciado,
+        Respuestas = f.Respuestas,
+        Correcta = f.Correcta
+    };
+}

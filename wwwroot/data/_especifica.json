@@ -1,0 +1,112 @@
+[
+  {
+    "Id": 1,
+    "pregunta": "De los siguientes ordenadores personales, ¿cuál fue el que logró un éxito realmente notable en el mercado?",
+    "respuestas": [
+      "El PC Wozniak.",
+      "IBM PC.",
+      "Motorola PC 68K.",
+      "Zilog Z c80."
+    ],
+    "correcta": -1
+  },
+  {
+    "Id": 2,
+    "pregunta": "¿Qué material se emplea para fabricar un microprocesador?",
+    "respuestas": [
+      "Aluminio.",
+      "Galenio.",
+      "Silicio.",
+      "Todas las anteriores son correctas."
+    ],
+    "correcta": -1
+  },
+  {
+    "Id": 3,
+    "pregunta": "¿Qué son FPM y BEDO?",
+    "respuestas": [
+      "Tipos de memoria RAM.",
+      "Tipos de zócalo para microprocesador.",
+      "Ranuras de memoria.",
+      "Tipos de disco duro."
+    ],
+    "correcta": -1
+  },
+  {
+    "Id": 4,
+    "pregunta": "Seleccione la afirmación correcta acerca de los sistemas de firmware BIOS y UEFI utilizados en las placas base modernas:",
+    "respuestas": [
+      "Tipos de firmware que están incorporados en un chip de la placa base.",
+      "Se encargan de arrancar el PC y de dar soporte para manejar ciertos dispositivos de entrada/salida.",
+      "Ofrecen una interfaz gráfica para configurar parámetros básicos.",
+      "Todas las anteriores son correctas."
+    ],
+    "correcta": -1
+  },
+  {
+    "Id": 5,
+    "pregunta": "¿Qué dispositivo del ordenador realiza el procesamiento necesario para representar gráficos en pantalla?",
+    "respuestas": [
+      "La CPU.",
+      "La GPU.",
+      "La TFPU.",
+      "NINGUNA de las anteriores es correcta."
+    ],
+    "correcta": -1
+  },
+  {
+    "Id": 6,
+    "pregunta": "¿Qué se entiende por \"resolución\" de una pantalla?",
+    "respuestas": [
+      "La relación entre el tamaño horizontal y el tamaño vertical de la pantalla.",
+      "El número de pulgadas que hay en la diagonal de la pantalla.",
+      "El número de puntos individuales (pixel) que puede representar el monitor en forma de puntos horizontales por puntos verticales.",
+      "NINGUNA de las anteriores es correcta."
+    ],
+    "correcta": -1
+  },
+  {
+    "Id": 7,
+    "pregunta": "¿Qué son SATA, SAS y PCIe?",
+    "respuestas": [
+      "Conectores de discos duros.",
+      "Interfaces de almacenamiento internas.",
+      "Ranuras de extensión para los discos duros.",
+      "Buses de datos."
+    ],
+    "correcta": -1
+  },
+  {
+    "Id": 8,
+    "pregunta": "¿Qué tecnología realiza una grabación magnética asistida por calor?",
+    "respuestas": [
+      "HAMR.",
+      "SMR.",
+      "PMR.",
+      "HGST."
+    ],
+    "correcta": -1
+  },
+  {
+    "Id": 9,
+    "pregunta": "¿Cuál de los siguientes se considera un formato de tarjeta de memoria?",
+    "respuestas": [
+      "SDHC.",
+      "QFast.",
+      "XQD.",
+      "La a) y c) son correctas."
+    ],
+    "correcta": -1
+  },
+  {
+    "Id": 10,
+    "pregunta": "¿Cuáles de estos componentes incluyen los netbooks?",
+    "respuestas": [
+      "Sistemas operativos Chrome OS o Windows 10.",
+      "Microprocesadores sencillos, tipo atom, Celeron o algún ARM, pero mejorados y de hasta 4 núcleos.",
+      "Pantallas de como mínimo 11.6 pulgadas, LED y resolución \"HD Ready\" al menos.",
+      "Todas las anteriores son correctas."
+    ],
+    "correcta": -1
+  }
+]

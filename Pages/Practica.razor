@@ -1,0 +1,175 @@
+@page "/practica/{bateria}"
+@inject PreguntaService PreguntaService
+@inject FallosService FallosService
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@using OpeApp.Models
+@using OpeApp.Services
+
+<PageTitle>Practicando</PageTitle>
+
+@if (_sinConexion)
+{
+    <div class="practica-container">
+        <div class="sin-conexion-card">
+            <div class="sin-conexion-icono">📡</div>
+            <h2>Sin conexión</h2>
+            <p>Necesitas conexión a internet para empezar a practicar.</p>
+            <button class="btn-volver" @onclick="VolverAlInicio">← Volver al inicio</button>
+        </div>
+    </div>
+}
+else if (_cargando)
+{
+    <div class="loading">Cargando preguntas...</div>
+}
+else if (_sesion.PreguntaActual is null)
+{
+    <div class="loading">No hay preguntas disponibles.</div>
+}
+else
+{
+    var pregunta = _sesion.PreguntaActual;
+    var respondida = _sesion.RespuestasUsuario[_sesion.IndiceActual].HasValue;
+    var esCorrecta = _sesion.RespuestaActualEsCorrecta();
+
+    <div class="practica-container">
+        <div class="practica-topbar">
+            <button class="btn-volver" @onclick="VolverAlInicio" title="Volver al inicio">← Inicio</button>
+        </div>
+        <div class="progreso-bar">
+            <div class="progreso-fill" style="width: @((_sesion.IndiceActual + 1) * 100 / _sesion.Total)%"></div>
+        </div>
+        <div class="progreso-texto">
+            Pregunta @(_sesion.IndiceActual + 1) de @_sesion.Total
+            <span class="bateria-badge">@Bateria.ToUpper()</span>
+        </div>
+
+        <div class="pregunta-card">
+
+            <p class="enunciado"><b>@pregunta.Bateria @pregunta.Id</b><br/>@pregunta.Enunciado</p>
+
+            <div class="respuestas">
+                @for (int i = 0; i < pregunta.Respuestas.Count; i++)
+                {
+                    var idx = i;
+                    var clase = ObtenerClaseRespuesta(idx, respondida, pregunta.Correcta);
+                    <button class="respuesta-btn @clase"
+                            disabled="@respondida"
+                            @onclick="() => Responder(idx)">
+                        <span class="respuesta-letra">@((char)('A' + idx))</span>
+                        @pregunta.Respuestas[idx]
+                    </button>
+                }
+            </div>
+
+            @if (respondida)
+            {
+                <div class="feedback @(esCorrecta == true ? "feedback-correcto" : "feedback-incorrecto")">
+                    @if (esCorrecta == true)
+                    {
+                        <span>✓ ¡Correcto!</span>
+                    }
+                    else
+                    {
+                        @if(pregunta.Correcta < 0)
+                        {
+                            <span>No se ha establecido respuesta a esa pregunta.</span>
+                        }
+                        else
+                        {
+                            <span>✗ Incorrecto. La respuesta correcta era: <strong>@pregunta.Respuestas[pregunta.Correcta]</strong></span>
+                        }
+                    }
+                </div>
+
+                <div class="acciones">
+                    @if (!_sesion.EsUltima)
+                    {
+                        <button class="btn-siguiente" @onclick="Siguiente">Siguiente →</button>
+                    }
+                    else
+                    {
+                        <button class="btn-siguiente" @onclick="VerResultados">Ver resultados</button>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string Bateria { get; set; } = "comun";
+    [SupplyParameterFromQuery] public bool? Orden { get; set; }
+    [SupplyParameterFromQuery(Name = "c")] public int? NumComun { get; set; }
+    [SupplyParameterFromQuery(Name = "e")] public int? NumEspecifica { get; set; }
+
+    private SesionEstudio _sesion = new();
+    private bool _cargando = true;
+    private bool _sinConexion;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await JS.InvokeAsync<bool>("checkRealOnline"))
+        {
+            _sinConexion = true;
+            _cargando = false;
+            return;
+        }
+
+        var mantenerOrden = Orden ?? false;
+        List<Pregunta> preguntas;
+
+        if (Bateria == "todas")
+        {
+            var comun = await PreguntaService.ObtenerPorBateria(TipoBateria.Comun);
+            var especifica = await PreguntaService.ObtenerPorBateria(TipoBateria.Especifica);
+
+            var nComun = Math.Clamp(NumComun ?? 0, 0, comun.Count);
+            var nEspec = Math.Clamp(NumEspecifica ?? 0, 0, especifica.Count);
+
+            preguntas = comun.OrderBy(_ => Random.Shared.Next()).Take(nComun)
+                             .Concat(especifica.OrderBy(_ => Random.Shared.Next()).Take(nEspec))
+                             .ToList();
+        }
+        else
+        {
+            preguntas = Bateria switch
+            {
+                "especifica" => await PreguntaService.ObtenerPorBateria(TipoBateria.Especifica),
+                _             => await PreguntaService.ObtenerPorBateria(TipoBateria.Comun)
+            };
+        }
+
+        _sesion.Inicializar(preguntas, mantenerOrden);
+        _cargando = false;
+    }
+
+    async Task Responder(int idx)
+    {
+        _sesion.ResponderActual(idx);
+        if (_sesion.RespuestaActualEsCorrecta() == false && _sesion.PreguntaActual is { } p)
+        {
+            await FallosService.AgregarFallo(p);
+        }
+    }
+
+    void Siguiente() => _sesion.Siguiente();
+
+    void VolverAlInicio() => Nav.NavigateTo("/");
+
+    void VerResultados()
+    {
+        var aciertos = _sesion.ContarAciertos();
+        var total = _sesion.Total;
+        Nav.NavigateTo($"/resultados/{aciertos}/{total}/{Bateria}");
+    }
+
+    string ObtenerClaseRespuesta(int idx, bool respondida, int correcta)
+    {
+        if (!respondida) return string.Empty;
+        if (idx == correcta) return "correcta";
+        if (idx == _sesion.RespuestasUsuario[_sesion.IndiceActual]) return "incorrecta";
+        return "desactivada";
+    }
+}
