@@ -19,7 +19,7 @@ jobs:
         dotnet-version: '10.0.x'
 
     - name: Publicar aplicación Blazor WASM
-      run: dotnet publish OpeApp/OpeApp.csproj -c Release -o release-output
+      run: dotnet publish OpeApp.csproj -c Release -o release-output
 
     - name: Mover archivos a Web Station (Limpiando lo anterior salvo archivos protegidos)
       run: |
