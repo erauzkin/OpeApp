@@ -24,17 +24,20 @@ jobs:
     - name: Mover archivos a Web Station (Limpiando lo anterior salvo archivos protegidos)
       run: |
         # Definimos la carpeta del NAS mapeada en el contenedor
-        TARGET_DIR="/app/output"
+        TARGET_DIR="/app/output/opeapp"
         
-        # 1. Limpieza selectiva: Borramos todo EXCEPTO los dos archivos que quieres proteger
-        find "$TARGET_DIR" -mindepth 1 ! -name '$TARGET_DIR/data/comun.json' ! -name '$TARGET_DIR/data/especifica.json' -delete
+        # Creamos la carpeta por si acaso es la primera vez
+        mkdir -p "$TARGET_DIR"
         
-        # 2. Copiamos los nuevos archivos compilados de .NET 10 a la carpeta del NAS
-        cp -r release-output/wwwroot/* "$TARGET_DIR/"
+        # 1. Limpieza selectiva usando -path y comillas dobles (apuntando a la subcarpeta)
+        find "$TARGET_DIR" -mindepth 1 \
+          ! -path "$TARGET_DIR/data/comun.json" \
+          ! -path "$TARGET_DIR/data/especifica.json" \
+          -delete
         
-        # ─── AQUÍ CORREGIMOS EL ERROR 403 ───
-        # Concedemos permisos de ejecución/lectura a los directorios para que Apache pueda entrar
+        # 2. Copiamos la compilación de .NET 10 dentro de su subcarpeta
+        cp -RT release-output/wwwroot/ "$TARGET_DIR/"
+        
+        # 3. Corregimos permisos en la subcarpeta del proyecto
         find "$TARGET_DIR" -type d -exec chmod 755 {} +
-        
-        # Concedemos permisos de lectura a todos los archivos para que sean accesibles web
         find "$TARGET_DIR" -type f -exec chmod 644 {} +
