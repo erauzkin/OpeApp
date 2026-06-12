@@ -18,8 +18,8 @@ jobs:
       with:
         dotnet-version: '10.0.x'
 
-    - name: Publicar aplicación Blazor
-      run: dotnet publish -c Release -o release-output
+    - name: Publicar aplicación Blazor WASM
+      run: dotnet publish OpeApp/OpeApp.csproj -c Release -o release-output
 
     - name: Mover archivos a Web Station (Limpiando lo anterior salvo archivos protegidos)
       run: |
@@ -29,7 +29,7 @@ jobs:
         # Creamos la carpeta por si acaso es la primera vez
         mkdir -p "$TARGET_DIR"
         
-        # 1. Limpieza selectiva usando -path y comillas dobles (apuntando a la subcarpeta)
+        # 1. Limpieza selectiva
         find "$TARGET_DIR" -mindepth 1 \
           ! -path "$TARGET_DIR/data" \
           ! -path "$TARGET_DIR/data/comun.json" \
@@ -42,3 +42,4 @@ jobs:
         # 3. Corregimos permisos en la subcarpeta del proyecto
         find "$TARGET_DIR" -type d -exec chmod 755 {} +
         find "$TARGET_DIR" -type f -exec chmod 644 {} +
+        chown -R root:http "$TARGET_DIR"
