@@ -42,4 +42,3 @@ jobs:
         # 3. Corregimos permisos en la subcarpeta del proyecto
         find "$TARGET_DIR" -type d -exec chmod 755 {} +
         find "$TARGET_DIR" -type f -exec chmod 644 {} +
-        chown -R root:http "$TARGET_DIR"
