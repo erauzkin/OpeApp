@@ -31,6 +31,7 @@ jobs:
         
         # 1. Limpieza selectiva usando -path y comillas dobles (apuntando a la subcarpeta)
         find "$TARGET_DIR" -mindepth 1 \
+          ! -path "$TARGET_DIR/data" \
           ! -path "$TARGET_DIR/data/comun.json" \
           ! -path "$TARGET_DIR/data/especifica.json" \
           -delete
